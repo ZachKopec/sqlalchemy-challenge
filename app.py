@@ -40,8 +40,8 @@ def welcome():
         f"/api/v1.0/precipitaion<br>"
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/start"
-#         # f"/api/v1.0/<start>/<end>"
+        f"/api/v1.0/start<br>"
+        f"/api/v1.0/start_end"
      )
 
 
@@ -126,7 +126,7 @@ def toobs():
 @app.route("/api/v1.0/start")
 def start():
     
-    user_start = input("Please enter a date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
+    user_start = input("Please enter a start date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
     
     # Create our session (link) from Python to the DB
     session = Session(engine)
@@ -159,21 +159,42 @@ def start():
 
     return jsonify(temp4)
 
-# @app.route("/api/v1.0/<start>/<end>")
-# def names():
-#     # Create our session (link) from Python to the DB
-#     session = Session(engine)
+@app.route("/api/v1.0/start_end")
+def start_end():
+    
+    user_start = input("Please enter a start date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
+    user_end = input("Please enter an end date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
+    
+    # Create our session (link) from Python to the DB
+    session = Session(engine)
 
-#     """Return a list of all passenger names"""
-#     # Query all passengers
-#     results = session.query(temp.name).all()
+    """Return a list of all passenger names"""
 
-#     session.close()
+    # Query all passengers
+    sel5 = [measure.date,
+            func.min(measure.tobs),
+            func.max(measure.tobs),
+            func.avg(measure.tobs)]
 
-#     # Convert list of tuples into normal list
-#     all_names = list(np.ravel(results))
+    start_end_agg = session.query(*sel5).\
+        filter(measure.date >= user_start, measure.date <= user_end).\
+        group_by(measure.date).\
+        order_by(measure.date).all()
 
-#     return jsonify(all_names)
+    session.close()
+
+    # Convert list of tuples into normal list
+    temp5 = []
+    for date, min_tobs, max_tobs, avg_tobs in start_end_agg:
+        start_end_dict = {}
+        start_end_dict["date"] = date
+        start_end_dict["min temp"] = min_tobs
+        start_end_dict["max temp"] = max_tobs
+        start_end_dict["avg. temp"] = avg_tobs
+
+        temp5.append(start_end_dict)
+
+    return jsonify(temp5)
 
 
 if __name__ == '__main__':
