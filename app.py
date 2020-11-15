@@ -1,37 +1,29 @@
 import numpy as np
-
 import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
-
 from flask import Flask, jsonify
 
 
-#################################################
 # Database Setup
-#################################################
 engine = create_engine("sqlite:///Resources/hawaii.sqlite")
 
-# reflect an existing database into a new model
+#Reflect an existing database into a new model
 Base = automap_base()
-# reflect the tables
+#Reflect the tables
 Base.prepare(engine, reflect=True)
 
-# Save reference to the table
+#Save reference to the table
 measure = Base.classes.measurement
 station = Base.classes.station
 
-#################################################
-# Flask Setup
-#################################################
+#Flask Setup
 app = Flask(__name__)
 
 
-# #################################################
-# # Flask Routes
-# #################################################
-
+#Flask Routes
+#Home
 @app.route("/")
 def welcome():
     """List all available api routes."""
@@ -44,13 +36,13 @@ def welcome():
         f"/api/v1.0/start_end"
      )
 
-
+#Precipitation
 @app.route("/api/v1.0/precipitaion")
 def precip():
-    # Create our session (link) from Python to the DB
+    #Create session
     session = Session(engine)
 
-    # Perform a query to retrieve the data and precipitation scores
+    #Perform a query to retrieve the data and precipitation scores
     sel = [measure.date,
            func.avg(measure.prcp)]
 
@@ -61,7 +53,7 @@ def precip():
 
     session.close()
 
-    # Convert list of tuples into normal list
+    #Convert into normal list
     temp = []
     for date, prcp in data_agg:
         precip_dict = {}
@@ -69,41 +61,43 @@ def precip():
         precip_dict["prcp"] = prcp
         temp.append(precip_dict)
 
+    #JSONIFY
     return jsonify(temp)
 
-
+#Stations
 @app.route("/api/v1.0/stations")
 def statsons():
-    # Create our session (link) from Python to the DB
+    #Create session
     session = Session(engine)
 
-    """Return a list of passenger data including the name, age, and sex of each passenger"""
-    # Query all unique stations
+    #Query all unique stations
     stations = session.query(station.station).\
             order_by(station.station).all()
 
     session.close()
 
-    # Create a dictionary from the row data and append to a list of all_passengers
+    #Convert into normal list
     all_stations = []
     for stat in stations:
         station_dict = {}
         station_dict["station"] = stat
         all_stations.append(station_dict)
 
+    JSONIFY
     return jsonify(all_stations)
 
+#tobs
 @app.route("/api/v1.0/tobs")
 def toobs():
-    # Create our session (link) from Python to the DB
+    
+    #Create session
     session = Session(engine)
 
-    """Return a list of all passenger names"""
-    # Query all passengers
     sel3 = [measure.station,
             measure.date,
             measure.tobs]
 
+    #Query temp info in past year for station
     act_agg = session.query(*sel3).\
         filter(measure.date > '2016-08-23', measure.station == 'USC00519281').\
         group_by(measure.date).\
@@ -111,7 +105,7 @@ def toobs():
 
     session.close()
 
-    # Convert list of tuples into normal list
+    #Convert into normal list
     temp2 = []
     for station, date, tobs in act_agg:
         tobs_dict = {}
@@ -121,19 +115,22 @@ def toobs():
 
         temp2.append(tobs_dict)
 
+    JSONIFY
     return jsonify(temp2)
 
+#Start
 @app.route("/api/v1.0/start")
 def start():
     
+    #User input
     user_start = input("Please enter a start date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
     
-    # Create our session (link) from Python to the DB
+    #Create session
     session = Session(engine)
 
     """Return a list of all passenger names"""
 
-    # Query all passengers
+    #Query temp info in past year for station
     sel4 = [measure.date,
             func.min(measure.tobs),
             func.max(measure.tobs),
@@ -146,7 +143,7 @@ def start():
 
     session.close()
 
-    # Convert list of tuples into normal list
+    #Convert into normal list
     temp4 = []
     for date, min_tobs, max_tobs, avg_tobs in start_agg:
         start_dict = {}
@@ -157,20 +154,21 @@ def start():
 
         temp4.append(start_dict)
 
+    JSONIFY
     return jsonify(temp4)
 
+#Start & End
 @app.route("/api/v1.0/start_end")
 def start_end():
     
+    #User input
     user_start = input("Please enter a start date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
     user_end = input("Please enter an end date in the format: 'YYYY-MM-DD' (Earliest date is 2010-01-01 & latest date is 2017-08-23) ")
     
-    # Create our session (link) from Python to the DB
+    #Create Session
     session = Session(engine)
 
-    """Return a list of all passenger names"""
-
-    # Query all passengers
+    #Query temp info in past year for station
     sel5 = [measure.date,
             func.min(measure.tobs),
             func.max(measure.tobs),
@@ -183,7 +181,7 @@ def start_end():
 
     session.close()
 
-    # Convert list of tuples into normal list
+    #Conver to normal list
     temp5 = []
     for date, min_tobs, max_tobs, avg_tobs in start_end_agg:
         start_end_dict = {}
@@ -194,6 +192,7 @@ def start_end():
 
         temp5.append(start_end_dict)
 
+    #JSONIFY
     return jsonify(temp5)
 
 
